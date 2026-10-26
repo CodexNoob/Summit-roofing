@@ -97,7 +97,7 @@ function QuotePage() {
 						{quote.status === 'sent' && (
 							<>
 								<label className="flex cursor-pointer items-start gap-3 text-sm">
-									<input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#F97316]" />
+									<input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-accent" />
 									<span>I have read this estimate and accept the scope, the {money(quote.total)} total and the deposit terms above.</span>
 								</label>
 								{error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}

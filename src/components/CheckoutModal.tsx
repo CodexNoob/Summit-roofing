@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Checkout, CheckoutElement, ExpressCheckoutElement, WhopElements } from '@whop/elements-react'
+import { BrandingElement, Checkout, CheckoutElement, ExpressCheckoutElement, Payments, WhopElements } from '@whop/elements-react'
 import { loadWhop } from '@whop/elements'
 import { CheckCircle2, Loader2, ShieldCheck, X } from 'lucide-react'
 import { site, type Plan } from '#/config/site'
@@ -107,6 +107,9 @@ export function CheckoutModal({ plan, extra, onClose }: { plan: Plan; extra?: Ch
 							)}
 							{!error && (
 								<div className="space-y-5" key={attempt}>
+									<Payments>
+										<BrandingElement />
+									</Payments>
 									{/* Wallets (Apple Pay, Google Pay, PayPal) render only where the device, merchant and verified domain allow. */}
 									<Checkout
 										plan={plan.planId}

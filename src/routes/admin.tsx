@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
-import { ArrowDownRight, ClipboardList, LayoutDashboard, LogOut, Sparkles, Trash2, UsersRound } from 'lucide-react'
+import { ArrowDownRight, ClipboardList, LayoutDashboard, LogOut, ReceiptText, Sparkles, Trash2, UsersRound } from 'lucide-react'
 import { site } from '#/config/site'
-import { adminDeleteLead, adminListLeads, adminSaveQuote, adminStatus, type LeadRow } from '#/lib/api'
+import { adminDeleteLead, adminListInvoices, adminListLeads, adminSaveQuote, adminStatus, type InvoiceView, type LeadRow } from '#/lib/api'
+import { AdminInvoices } from '#/components/AdminInvoices'
 import { Logo } from '#/components/Navigation'
 
 export const Route = createFileRoute('/admin')({
 	head: () => ({ meta: [{ title: `Operator console | ${site.name}` }, { name: 'robots', content: 'noindex' }] }),
 	loader: async () => {
 		const s = await adminStatus()
-		if (!s.ok) return { access: s.reason, name: '', leads: [] as LeadRow[], listError: '' }
-		const [leads] = await Promise.allSettled([adminListLeads()])
-		const err = [leads].flatMap((r) => (r.status === 'rejected' ? [r.reason instanceof Error ? r.reason.message : 'Request failed.'] : []))
+		if (!s.ok) return { access: s.reason, name: '', leads: [] as LeadRow[], invoices: [] as InvoiceView[], listError: '' }
+		const [leads, invoices] = await Promise.allSettled([adminListLeads(), adminListInvoices()])
+		const err = [leads, invoices].flatMap((r) => (r.status === 'rejected' ? [r.reason instanceof Error ? r.reason.message : 'Request failed.'] : []))
 		return {
 			access: 'ok' as const,
 			name: s.name,
 			leads: leads.status === 'fulfilled' ? leads.value : ([] as LeadRow[]),
+			invoices: invoices.status === 'fulfilled' ? invoices.value : ([] as InvoiceView[]),
 			listError: err.join(' '),
 		}
 	},
@@ -29,7 +31,7 @@ function Admin() {
 	const router = useRouter()
 	const [activeTab, setActiveTab] = useState('overview')
 	useEffect(() => {
-		const validTabs = ['overview', 'leads']
+		const validTabs = ['overview', 'leads', 'invoices']
 		const syncTab = () => {
 			const tab = window.location.hash.slice(1)
 			setActiveTab(validTabs.includes(tab) ? tab : 'overview')
@@ -86,6 +88,7 @@ function Admin() {
 				<nav className="admin-tabs" aria-label="Dashboard sections">
 					<button type="button" className={activeTab === 'overview' ? 'active' : ''} aria-current={activeTab === 'overview' ? 'page' : undefined} onClick={() => goToTab('overview')}><LayoutDashboard size={16} /> Overview</button>
 					<button type="button" className={activeTab === 'leads' ? 'active' : ''} aria-current={activeTab === 'leads' ? 'page' : undefined} onClick={() => goToTab('leads')}><UsersRound size={16} /> Leads <b>{data.leads.length}</b></button>
+					<button type="button" className={activeTab === 'invoices' ? 'active' : ''} aria-current={activeTab === 'invoices' ? 'page' : undefined} onClick={() => goToTab('invoices')}><ReceiptText size={16} /> Invoices <b>{data.invoices.length}</b></button>
 				</nav>
 				{activeTab === 'overview' && <section className="admin-page admin-overview-page" aria-label="Business overview">
 				<div className="admin-metrics">
@@ -110,6 +113,8 @@ function Admin() {
 				{data.leads.map((l) => <LeadCard key={l.id} lead={l} onSaved={() => router.invalidate()} setMsg={setMsg} />)}
 				</div>
 			</section>}
+
+			{activeTab === 'invoices' && <AdminInvoices invoices={data.invoices} onChanged={() => router.invalidate()} onMessage={setMsg} />}
 
 			</div>
 		</main>
