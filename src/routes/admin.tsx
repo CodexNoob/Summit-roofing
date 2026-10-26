@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { ArrowDownRight, ArrowUpRight, ClipboardList, FilePlus2, LayoutDashboard, Loader2, LogOut, Plus, ReceiptText, Sparkles, UsersRound } from 'lucide-react'
 import { site } from '#/config/site'
@@ -35,6 +35,13 @@ const blank: Record<keyof InvoiceInput, string> = {
 function Admin() {
 	const data = Route.useLoaderData()
 	const router = useRouter()
+	const [activeTab, setActiveTab] = useState('overview')
+	useEffect(() => {
+		const syncTab = () => setActiveTab(window.location.hash.slice(1) || 'overview')
+		syncTab()
+		window.addEventListener('hashchange', syncTab)
+		return () => window.removeEventListener('hashchange', syncTab)
+	}, [])
 	const [f, setF] = useState(blank)
 	const [errors, setErrors] = useState<InvoiceErrors>({})
 	const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
@@ -149,7 +156,12 @@ function Admin() {
 					<div><div className="admin-kicker"><Sparkles size={14} aria-hidden /> OPERATIONS OVERVIEW <span className="admin-live"><i /> LIVE</span></div><h1>Good work starts <span>here.</span></h1><p>Manage new opportunities, prepare quotes, and keep every project moving.</p></div>
 					<a href="#invoice-form" className="admin-cta"><Plus size={17} aria-hidden /> Create invoice</a>
 				</div>
-				<nav className="admin-tabs" aria-label="Dashboard sections"><a className="active" href="#overview"><LayoutDashboard size={16} /> Overview</a><a href="#leads"><UsersRound size={16} /> Leads <b>{data.leads.length}</b></a><a href="#invoice-form"><FilePlus2 size={16} /> New invoice</a><a href="#invoices"><ReceiptText size={16} /> Invoices <b>{data.invoices.length}</b></a></nav>
+				<nav className="admin-tabs" aria-label="Dashboard sections">
+					<a className={activeTab === 'overview' ? 'active' : ''} aria-current={activeTab === 'overview' ? 'location' : undefined} href="#overview" onClick={() => setActiveTab('overview')}><LayoutDashboard size={16} /> Overview</a>
+					<a className={activeTab === 'leads' ? 'active' : ''} aria-current={activeTab === 'leads' ? 'location' : undefined} href="#leads" onClick={() => setActiveTab('leads')}><UsersRound size={16} /> Leads <b>{data.leads.length}</b></a>
+					<a className={activeTab === 'invoice-form' ? 'active' : ''} aria-current={activeTab === 'invoice-form' ? 'location' : undefined} href="#invoice-form" onClick={() => setActiveTab('invoice-form')}><FilePlus2 size={16} /> New invoice</a>
+					<a className={activeTab === 'invoices' ? 'active' : ''} aria-current={activeTab === 'invoices' ? 'location' : undefined} href="#invoices" onClick={() => setActiveTab('invoices')}><ReceiptText size={16} /> Invoices <b>{data.invoices.length}</b></a>
+				</nav>
 				<section id="overview" aria-label="Business overview" className="admin-metrics">
 					<Metric icon={<UsersRound size={18} />} label="Incoming leads" value={data.leads.length} hint="Website estimate requests" tone="blue" />
 					<Metric icon={<ClipboardList size={18} />} label="Quotes in progress" value={acceptedQuotes} hint="Accepted or deposit received" tone="orange" />
