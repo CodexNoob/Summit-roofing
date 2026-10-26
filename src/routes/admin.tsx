@@ -151,6 +151,8 @@ function LeadCard({ lead, onSaved, setMsg }: { lead: LeadRow; onSaved: () => voi
 	}
 
 	const badge: Record<string, string> = { none: 'No quote', sent: 'Quote sent', accepted: 'Accepted', deposit_paid: 'Deposit paid', expired: 'Expired' }
+	const daysUntilExpiry = q.validUntil ? Math.ceil((new Date(`${q.validUntil}T23:59:59`).getTime() - Date.now()) / 86_400_000) : null
+	const dueSoon = q.status === 'sent' && daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 3
 	return (
 		<article className="rounded-card border border-line bg-paper p-5">
 			<div className="flex flex-wrap items-start justify-between gap-2">
@@ -163,6 +165,7 @@ function LeadCard({ lead, onSaved, setMsg }: { lead: LeadRow; onSaved: () => voi
 			<p className="mt-3 text-sm text-muted">{lead.email} · {lead.phone}</p>
 			{lead.description && <p className="mt-2 line-clamp-3 text-sm">{lead.description}</p>}
 			{q.status !== 'none' && <p className="mt-3 text-sm font-semibold">Quote total ${q.total.toFixed(2)} · valid until {q.validUntil}</p>}
+			{dueSoon && <p role="status" className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">Quote expires {daysUntilExpiry === 0 ? 'today' : `in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'}`}.</p>}
 			{link && (
 				<div className="mt-3">
 					<label className="text-xs font-semibold text-muted" htmlFor={`l-${lead.id}`}>Private customer link</label>
