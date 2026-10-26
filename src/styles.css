@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+/* Direction: precise, sheltering, editorial. Navy structure, orange only for action. */
+@theme {
+	--font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+	--font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+	--color-navy: #101b2b;
+	--color-slate: #1d2a3a;
+	--color-accent: #f97316;
+	--color-accent-deep: #c2410c;
+	--color-paper: #fafaf8;
+	--color-card: #f1f3f5;
+	--color-ink: #101b2b;
+	--color-muted: #64748b;
+	--color-line: #e2e6ea;
+	--radius-card: 0.75rem;
+	--ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+	background: var(--color-paper);
+	color: var(--color-ink);
+	color-scheme: light;
+	scroll-behavior: smooth;
+	scroll-padding-top: 5rem;
+	-webkit-font-smoothing: antialiased;
+}
+
+body {
+	font-family: var(--font-sans);
+	overflow-x: hidden;
+}
+
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+/* ───── Motion system ───── */
+.reveal {
+	transition:
+		opacity 600ms var(--ease-out-quint),
+		transform 600ms var(--ease-out-quint);
+	transition-delay: var(--d, 0ms);
+}
+/* Content stays visible until JavaScript is ready, so SSR, crawlers and no-JS users always see it. */
+html.reveal-ready .reveal:not(.is-in) {
+	opacity: 0;
+	transform: translateY(18px);
+}
+
+@keyframes hero-img {
+	from {
+		transform: scale(1.08);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+@keyframes rise {
+	from {
+		opacity: 0;
+		transform: translateY(26px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+@keyframes scroll-cue {
+	0% {
+		transform: translateY(-100%);
+	}
+	60%,
+	100% {
+		transform: translateY(100%);
+	}
+}
+.hero-img {
+	animation: hero-img 1400ms var(--ease-out-quint) both;
+}
+.rise {
+	animation: rise 700ms var(--ease-out-quint) both;
+	animation-delay: var(--d, 0ms);
+}
+.scroll-cue::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: var(--color-accent);
+	animation: scroll-cue 1.8s ease-in-out infinite;
+}
+
+.arrow-nudge svg {
+	transition: transform 250ms var(--ease-out-quint);
+}
+.arrow-nudge:hover svg,
+.arrow-nudge:focus-visible svg {
+	transform: translateX(4px);
+}
+
+.img-zoom img {
+	transition: transform 900ms var(--ease-out-quint);
+}
+.img-zoom:hover img,
+.img-zoom:focus-within img {
+	transform: scale(1.05);
+}
+
+.faq-panel {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 350ms var(--ease-out-quint);
+}
+.faq-panel[data-open="true"] {
+	grid-template-rows: 1fr;
+}
+.faq-panel > div {
+	overflow: hidden;
+}
+
+.timeline-line {
+	transform-origin: left;
+	transition: transform 1400ms var(--ease-out-quint);
+}
+html.reveal-ready .timeline-line:not(.is-in) {
+	transform: scaleX(0);
+}
+.timeline-line-v {
+	transform-origin: top;
+	transition: transform 1400ms var(--ease-out-quint);
+}
+html.reveal-ready .timeline-line-v:not(.is-in) {
+	transform: scaleY(0);
+}
+
+.texture {
+	background-image:
+		linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+	background-size: 48px 48px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		transition-delay: 0ms !important;
+	}
+	html.reveal-ready .reveal:not(.is-in) {
+		opacity: 1;
+		transform: none;
+	}
+	.timeline-line,
+	.timeline-line-v {
+		transform: none;
+	}
+}
