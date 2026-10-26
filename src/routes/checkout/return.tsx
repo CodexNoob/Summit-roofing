@@ -15,7 +15,7 @@ export const Route = createFileRoute('/checkout/return')({
 
 /* Display only. The URL is not proof of payment; Whop's receipt email and the dashboard are. */
 function Return() {
-	const { status, payment, setup, plan } = Route.useSearch()
+	const { status, payment, setup } = Route.useSearch()
 	const ref = payment ?? setup
 	const face =
 		status === 'succeeded'
@@ -29,20 +29,7 @@ function Return() {
 				<face.Icon className={`mx-auto size-14 ${face.color}`} aria-hidden />
 				<h1 className="mt-5 font-display text-4xl font-extrabold">{face.title}</h1>
 				<p className="mt-3 text-muted">{face.text}</p>
-				{status === 'succeeded' && plan === 'repair' ? (
-					<div className="mt-8 space-y-3">
-						<a
-							href="/#estimate"
-							onClick={() => sessionStorage.setItem('summit_service', 'Roof repair')}
-							className="inline-flex min-h-12 items-center rounded-full bg-accent px-8 font-semibold text-navy"
-						>
-							Share repair details and arrange a visit
-						</a>
-						<p className="text-sm text-muted">Tell us where the roof is and what needs attention. We will follow up to coordinate the repair.</p>
-					</div>
-				) : (
-					<Link to="/" className="mt-8 inline-flex min-h-12 items-center rounded-full bg-navy px-8 font-semibold text-white">Back to {site.shortName}</Link>
-				)}
+				<Link to="/" className="mt-8 inline-flex min-h-12 items-center rounded-full bg-navy px-8 font-semibold text-white">Back to {site.shortName}</Link>
 			</div>
 		</main>
 	)

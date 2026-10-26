@@ -58,11 +58,6 @@ export function CheckoutModal({ plan, extra, onClose }: { plan: Plan; extra?: Ch
 		extra?.onPaid?.(id)
 	}, [extra])
 
-	const shareRepairDetails = () => {
-		sessionStorage.setItem('summit_service', 'Roof repair')
-		window.location.assign('/#estimate')
-	}
-
 	return (
 		<div className="fixed inset-0 z-[100] flex items-end justify-center bg-navy/70 p-0 backdrop-blur-[2px] sm:items-center sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
 			<div
@@ -150,13 +145,6 @@ export function CheckoutModal({ plan, extra, onClose }: { plan: Plan; extra?: Ch
 									<button onClick={onClose} className="min-h-11 w-full rounded-full border border-line font-semibold transition hover:border-ink">
 										No thanks, I will pay the invoice myself
 									</button>
-								</div>
-							) : plan.key === 'repair' ? (
-								<div className="mt-6 space-y-3">
-									<button onClick={shareRepairDetails} className="min-h-12 w-full rounded-full bg-accent px-6 font-semibold text-navy transition hover:brightness-110">
-										Share repair details and arrange a visit
-									</button>
-									<p className="text-sm text-muted">Tell us where the roof is and what needs attention. We will follow up to coordinate the repair.</p>
 								</div>
 							) : (
 								<button onClick={onClose} className="mt-6 min-h-12 rounded-full bg-navy px-8 font-semibold text-white">
