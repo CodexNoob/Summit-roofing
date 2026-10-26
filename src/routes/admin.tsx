@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
-import { Loader2 } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ClipboardList, FilePlus2, LayoutDashboard, Loader2, LogOut, Plus, ReceiptText, Sparkles, UsersRound } from 'lucide-react'
 import { site } from '#/config/site'
 import { adminCreateInvoice, adminIssueInvoice, adminListInvoices, adminListLeads, adminSaveQuote, adminStatus, type InvoiceView, type LeadRow } from '#/lib/api'
 import { computeBalance, validateInvoice, type InvoiceErrors, type InvoiceInput } from '#/lib/validation'
@@ -88,6 +88,9 @@ function Admin() {
 	})
 	const inp = asInput()
 	const balance = [inp.approvedTotal, inp.depositPaid, inp.otherPayments].every(Number.isFinite) ? computeBalance(inp) : null
+	const acceptedQuotes = data.leads.filter((lead) => lead.quote.status === 'accepted' || lead.quote.status === 'deposit_paid').length
+	const openInvoices = data.invoices.filter((invoice) => ['draft', 'open'].includes(invoice.status)).length
+	const collectedInvoices = data.invoices.filter((invoice) => invoice.paid).length
 	const set = (k: keyof InvoiceInput) => (e: { target: { value: string; type?: string; checked?: boolean } }) =>
 		setF((p) => ({ ...p, [k]: e.target.type === 'checkbox' ? String(!!e.target.checked) : e.target.value }))
 
@@ -135,29 +138,37 @@ function Admin() {
 	const E = ({ k }: { k: keyof InvoiceErrors }) => (errors[k] ? <p className="mt-1 text-sm text-red-700">{errors[k]}</p> : null)
 
 	return (
-		<main className="mx-auto max-w-6xl px-5 py-12">
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<div>
-					<h1 className="font-display text-3xl font-extrabold tracking-tight">Operator console</h1>
-					<p className="text-sm text-muted">Signed in as {data.name}. All projects and customers here are demonstration data.</p>
+		<main className="admin-shell min-h-screen">
+			<header className="admin-topbar">
+				<Link to="/" className="admin-brand" aria-label={`${site.name} home`}><span className="admin-brand-mark">S</span><span>{site.name}<small>BUSINESS PORTAL</small></span></Link>
+				<div className="admin-topbar-right"><span className="admin-avatar">{data.name.slice(0, 1).toUpperCase()}</span><span className="hidden sm:block">{data.name}</span><a href="/api/oauth/logout" className="admin-logout"><LogOut size={16} aria-hidden /> Sign out</a></div>
+			</header>
+			<div className="admin-content">
+				<div className="admin-hero">
+					<div><div className="admin-kicker"><Sparkles size={14} aria-hidden /> OPERATIONS OVERVIEW <span className="admin-live"><i /> LIVE</span></div><h1>Good work starts <span>here.</span></h1><p>Manage new opportunities, prepare quotes, and keep every project moving.</p></div>
+					<a href="#invoice-form" className="admin-cta"><Plus size={17} aria-hidden /> Create invoice</a>
 				</div>
-				<div className="flex gap-4 text-sm"><Link to="/" className="underline">Site</Link><a href="/api/oauth/logout" className="underline">Sign out</a></div>
-			</div>
+				<nav className="admin-tabs" aria-label="Dashboard sections"><a className="active" href="#overview"><LayoutDashboard size={16} /> Overview</a><a href="#leads"><UsersRound size={16} /> Leads <b>{data.leads.length}</b></a><a href="#invoice-form"><FilePlus2 size={16} /> New invoice</a><a href="#invoices"><ReceiptText size={16} /> Invoices <b>{data.invoices.length}</b></a></nav>
+				<section id="overview" aria-label="Business overview" className="admin-metrics">
+					<Metric icon={<UsersRound size={18} />} label="Incoming leads" value={data.leads.length} hint="Website estimate requests" tone="blue" />
+					<Metric icon={<ClipboardList size={18} />} label="Quotes in progress" value={acceptedQuotes} hint="Accepted or deposit received" tone="orange" />
+					<Metric icon={<ReceiptText size={18} />} label="Invoices to action" value={openInvoices} hint="Draft or awaiting payment" tone="purple" />
+					<Metric icon={<ArrowUpRight size={18} />} label="Invoices collected" value={collectedInvoices} hint="Paid in full" tone="green" />
+				</section>
 
 			{msg && <p role={msg.kind === 'err' ? 'alert' : 'status'} className={`mt-6 rounded-lg border p-4 text-sm ${msg.kind === 'err' ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>{msg.text}</p>}
 
-			<section aria-labelledby="leads-h" className="mt-8">
-				<h2 id="leads-h" className="font-display text-xl font-extrabold">Leads and quotes</h2>
-				<p className="text-sm text-muted">Estimate requests from the website. Write a quote, send the private link to the customer, and use the accepted quote for the final invoice.</p>
+			<section id="leads" aria-labelledby="leads-h" className="admin-section">
+				<div className="admin-section-head"><div><div className="admin-section-kicker">YOUR PIPELINE</div><h2 id="leads-h">Leads &amp; quotes</h2><p>Turn estimate requests into clear, customer-ready project quotes.</p></div><span className="admin-count">{data.leads.length} total</span></div>
 				<div className="mt-4 grid gap-4 lg:grid-cols-2">
 					{data.leads.length === 0 && <p className="text-sm text-muted">No estimate requests yet.</p>}
 					{data.leads.map((l) => <LeadCard key={l.id} lead={l} onUse={() => useQuote(l)} onSaved={() => router.invalidate()} setMsg={setMsg} />)}
 				</div>
 			</section>
 
-			<div className="mt-10 grid gap-10 lg:grid-cols-[1.1fr_1fr]">
-				<form id="invoice-form" onSubmit={create} noValidate className="space-y-5 rounded-card border border-line bg-card p-6">
-					<h2 className="font-display text-xl font-extrabold">Create final invoice</h2>
+			<div className="admin-workspace">
+				<form id="invoice-form" onSubmit={create} noValidate className="admin-panel space-y-5">
+					<div className="admin-section-head"><div><div className="admin-section-kicker">PAYMENTS</div><h2><FilePlus2 size={20} /> Create final invoice</h2><p>Prepare the remaining balance for a completed project.</p></div></div>
 					<div className="grid gap-4 sm:grid-cols-2">
 						<label className="text-sm font-semibold">Project reference<input className={field} value={f.projectRef} onChange={set('projectRef')} aria-invalid={!!errors.projectRef} placeholder="DEMO-1042" /><E k="projectRef" /></label>
 						<label className="text-sm font-semibold">Customer name<input className={field} value={f.customerName} onChange={set('customerName')} aria-invalid={!!errors.customerName} /><E k="customerName" /></label>
@@ -183,13 +194,13 @@ function Admin() {
 						</div>
 						<label className="mt-3 flex items-start gap-3 text-sm"><input type="checkbox" checked={f.chargeSavedMethod === 'true'} onChange={set('chargeSavedMethod')} className="mt-0.5 size-5 accent-[#F97316]" />The customer authorized charging this saved method for this invoice.</label>
 					</fieldset>
-					<button disabled={busy === 'create'} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-navy px-8 font-semibold text-white disabled:opacity-60">
+					<button disabled={busy === 'create'} className="admin-submit inline-flex min-h-12 items-center gap-2 rounded-full bg-navy px-8 font-semibold text-white disabled:opacity-60">
 						{busy === 'create' && <Loader2 className="size-4 animate-spin" aria-hidden />} Create draft invoice
 					</button>
 				</form>
 
-				<section aria-labelledby="inv-h">
-					<h2 id="inv-h" className="font-display text-xl font-extrabold">Invoices</h2>
+				<section id="invoices" className="admin-invoice-column" aria-labelledby="inv-h">
+					<div className="admin-section-head"><div><div className="admin-section-kicker">RECEIVABLES</div><h2 id="inv-h"><ReceiptText size={20} /> Invoices</h2><p>Recent payment requests and their status.</p></div><span className="admin-count">{data.invoices.length} total</span></div>
 					<div className="mt-4 space-y-4">
 						{created && !data.invoices.some((i) => i.id === created.id) && <InvoiceCard inv={created} onIssue={issue} busy={busy === created.id} />}
 						{data.listError && <p className="text-sm text-red-700">{data.listError}</p>}
@@ -198,8 +209,13 @@ function Admin() {
 					</div>
 				</section>
 			</div>
+			</div>
 		</main>
 	)
+}
+
+function Metric({ icon, label, value, hint, tone }: { icon: React.ReactNode; label: string; value: number; hint: string; tone: 'blue' | 'orange' | 'purple' | 'green' }) {
+	return <article className="admin-metric"><span className={`admin-metric-icon ${tone}`}>{icon}</span><span className="admin-metric-label">{label}</span><strong>{value.toString().padStart(2, '0')}</strong><span className="admin-metric-hint">{hint}</span><ArrowDownRight className="admin-metric-arrow" size={17} aria-hidden /></article>
 }
 
 function LeadCard({ lead, onUse, onSaved, setMsg }: { lead: LeadRow; onUse: () => void; onSaved: () => void; setMsg: (m: { kind: 'ok' | 'err'; text: string }) => void }) {

@@ -3,5 +3,9 @@
   "name": "summit-roofing-co",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry"
+  "main": "@tanstack/react-start/server-entry",
+  "vars": {
+    "APP_ID": "app_drA44G8l7Qwbx9",
+    "WHOP_API_ORIGIN": "https://api.whop.com"
+  }
 }

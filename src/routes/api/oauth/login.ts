@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { setCookie } from '@tanstack/react-start/server'
+import { site } from '#/config/site'
 
 const SCOPES = 'openid profile email'
 
@@ -19,6 +20,11 @@ export const Route = createFileRoute('/api/oauth/login')({
 		handlers: {
 			GET: async ({ request }) => {
 				const url = new URL(request.url)
+			const clientId = process.env.APP_ID
+			if (!clientId) {
+				console.error('[oauth] APP_ID is not configured')
+				return Response.json({ error: 'OAuth is not configured on this deployment.' }, { status: 500 })
+			}
 				const verifier = randomString()
 				const state = randomString()
 				const nonce = randomString()
@@ -32,8 +38,8 @@ export const Route = createFileRoute('/api/oauth/login')({
 
 				const params = new URLSearchParams({
 					response_type: 'code',
-					client_id: process.env.APP_ID!,
-					redirect_uri: `${url.origin}/api/oauth/callback`,
+					client_id: clientId,
+					redirect_uri: new URL('/api/oauth/callback', site.url).toString(),
 					scope: SCOPES,
 					state,
 					nonce,

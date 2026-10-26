@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getCookie, setCookie } from '@tanstack/react-start/server'
+import { site } from '#/config/site'
 import { writeSession } from '#/lib/session'
 
 export const Route = createFileRoute('/api/oauth/callback')({
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/api/oauth/callback')({
 						client_id: process.env.APP_ID!,
 						code,
 						code_verifier: verifier,
-						redirect_uri: `${url.origin}/api/oauth/callback`,
+						redirect_uri: new URL('/api/oauth/callback', site.url).toString(),
 					}),
 				})
 				if (!response.ok) {
