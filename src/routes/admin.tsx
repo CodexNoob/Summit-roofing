@@ -37,11 +37,24 @@ function Admin() {
 	const router = useRouter()
 	const [activeTab, setActiveTab] = useState('overview')
 	useEffect(() => {
-		const syncTab = () => setActiveTab(window.location.hash.slice(1) || 'overview')
+		const validTabs = ['overview', 'leads', 'invoice-form', 'invoices']
+		const syncTab = () => {
+			const tab = window.location.hash.slice(1)
+			setActiveTab(validTabs.includes(tab) ? tab : 'overview')
+		}
 		syncTab()
 		window.addEventListener('hashchange', syncTab)
-		return () => window.removeEventListener('hashchange', syncTab)
+		window.addEventListener('popstate', syncTab)
+		return () => {
+			window.removeEventListener('hashchange', syncTab)
+			window.removeEventListener('popstate', syncTab)
+		}
 	}, [])
+	const goToTab = (tab: string) => {
+		setActiveTab(tab)
+		window.history.pushState(null, '', `${window.location.pathname}${window.location.search}#${tab}`)
+		window.scrollTo({ top: 0, behavior: 'smooth' })
+	}
 	const [f, setF] = useState(blank)
 	const [errors, setErrors] = useState<InvoiceErrors>({})
 	const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
@@ -84,7 +97,7 @@ function Admin() {
 			depositPaymentId: l.quote.depositPaymentId ?? '',
 		}))
 		setMsg({ kind: 'ok', text: `Invoice form filled from the accepted quote for ${l.name}. Set a due date, then create the draft.` })
-		document.getElementById('invoice-form')?.scrollIntoView({ behavior: 'smooth' })
+		goToTab('invoice-form')
 	}
 
 	const num = (s: string) => (s.trim() === '' ? NaN : Number(s))
@@ -154,33 +167,39 @@ function Admin() {
 			<div className="admin-content">
 				<div className="admin-hero">
 					<div><div className="admin-kicker"><Sparkles size={14} aria-hidden /> OPERATIONS OVERVIEW <span className="admin-live"><i /> LIVE</span></div><h1>Good work starts <span>here.</span></h1><p>Manage new opportunities, prepare quotes, and keep every project moving.</p></div>
-					<a href="#invoice-form" className="admin-cta"><Plus size={17} aria-hidden /> Create invoice</a>
+					<button type="button" className="admin-cta" onClick={() => goToTab('invoice-form')}><Plus size={17} aria-hidden /> Create invoice</button>
 				</div>
 				<nav className="admin-tabs" aria-label="Dashboard sections">
-					<a className={activeTab === 'overview' ? 'active' : ''} aria-current={activeTab === 'overview' ? 'location' : undefined} href="#overview" onClick={() => setActiveTab('overview')}><LayoutDashboard size={16} /> Overview</a>
-					<a className={activeTab === 'leads' ? 'active' : ''} aria-current={activeTab === 'leads' ? 'location' : undefined} href="#leads" onClick={() => setActiveTab('leads')}><UsersRound size={16} /> Leads <b>{data.leads.length}</b></a>
-					<a className={activeTab === 'invoice-form' ? 'active' : ''} aria-current={activeTab === 'invoice-form' ? 'location' : undefined} href="#invoice-form" onClick={() => setActiveTab('invoice-form')}><FilePlus2 size={16} /> New invoice</a>
-					<a className={activeTab === 'invoices' ? 'active' : ''} aria-current={activeTab === 'invoices' ? 'location' : undefined} href="#invoices" onClick={() => setActiveTab('invoices')}><ReceiptText size={16} /> Invoices <b>{data.invoices.length}</b></a>
+					<button type="button" className={activeTab === 'overview' ? 'active' : ''} aria-current={activeTab === 'overview' ? 'page' : undefined} onClick={() => goToTab('overview')}><LayoutDashboard size={16} /> Overview</button>
+					<button type="button" className={activeTab === 'leads' ? 'active' : ''} aria-current={activeTab === 'leads' ? 'page' : undefined} onClick={() => goToTab('leads')}><UsersRound size={16} /> Leads <b>{data.leads.length}</b></button>
+					<button type="button" className={activeTab === 'invoice-form' ? 'active' : ''} aria-current={activeTab === 'invoice-form' ? 'page' : undefined} onClick={() => goToTab('invoice-form')}><FilePlus2 size={16} /> New invoice</button>
+					<button type="button" className={activeTab === 'invoices' ? 'active' : ''} aria-current={activeTab === 'invoices' ? 'page' : undefined} onClick={() => goToTab('invoices')}><ReceiptText size={16} /> Invoices <b>{data.invoices.length}</b></button>
 				</nav>
-				<section id="overview" aria-label="Business overview" className="admin-metrics">
+				{activeTab === 'overview' && <section className="admin-page admin-overview-page" aria-label="Business overview">
+				<div className="admin-metrics">
 					<Metric icon={<UsersRound size={18} />} label="Incoming leads" value={data.leads.length} hint="Website estimate requests" tone="blue" />
 					<Metric icon={<ClipboardList size={18} />} label="Quotes in progress" value={acceptedQuotes} hint="Accepted or deposit received" tone="orange" />
 					<Metric icon={<ReceiptText size={18} />} label="Invoices to action" value={openInvoices} hint="Draft or awaiting payment" tone="purple" />
 					<Metric icon={<ArrowUpRight size={18} />} label="Invoices collected" value={collectedInvoices} hint="Paid in full" tone="green" />
-				</section>
+				</div>
+				<div className="admin-overview-bottom">
+					<article className="admin-quick-card"><div className="admin-section-kicker">WORK QUEUE</div><h2>Keep projects moving</h2><p>{data.leads.length ? `${data.leads.length} estimate request${data.leads.length === 1 ? '' : 's'} in your pipeline.` : 'New estimate requests will appear in your pipeline.'} {openInvoices ? `${openInvoices} invoice${openInvoices === 1 ? ' needs' : 's need'} attention.` : 'No invoices need attention right now.'}</p><button type="button" onClick={() => goToTab('leads')}>Open lead pipeline <ArrowDownRight size={15} /></button></article>
+					<article className="admin-quick-card admin-quick-card-accent"><div className="admin-section-kicker">QUICK ACTION</div><h2>Ready to bill a project?</h2><p>Create a clear final invoice from the approved project total and payments already received.</p><button type="button" onClick={() => goToTab('invoice-form')}>Create an invoice <Plus size={15} /></button></article>
+				</div>
+				</section>}
 
-			{msg && <p role={msg.kind === 'err' ? 'alert' : 'status'} className={`mt-6 rounded-lg border p-4 text-sm ${msg.kind === 'err' ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>{msg.text}</p>}
+			{msg && <p role={msg.kind === 'err' ? 'alert' : 'status'} className={`admin-notice mt-6 rounded-lg border p-4 text-sm ${msg.kind === 'err' ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>{msg.text}</p>}
 
-			<section id="leads" aria-labelledby="leads-h" className="admin-section">
+			{activeTab === 'leads' && <section aria-labelledby="leads-h" className="admin-page admin-section">
 				<div className="admin-section-head"><div><div className="admin-section-kicker">YOUR PIPELINE</div><h2 id="leads-h">Leads &amp; quotes</h2><p>Turn estimate requests into clear, customer-ready project quotes.</p></div><span className="admin-count">{data.leads.length} total</span></div>
 				<div className="mt-4 grid gap-4 lg:grid-cols-2">
 					{data.leads.length === 0 && <p className="text-sm text-muted">No estimate requests yet.</p>}
 					{data.leads.map((l) => <LeadCard key={l.id} lead={l} onUse={() => useQuote(l)} onSaved={() => router.invalidate()} setMsg={setMsg} />)}
 				</div>
-			</section>
+			</section>}
 
-			<div className="admin-workspace">
-				<form id="invoice-form" onSubmit={create} noValidate className="admin-panel space-y-5">
+			{(activeTab === 'invoice-form' || activeTab === 'invoices') && <div className="admin-workspace admin-page admin-workspace-single">
+				{activeTab === 'invoice-form' && <form id="invoice-form" onSubmit={create} noValidate className="admin-panel space-y-5">
 					<div className="admin-section-head"><div><div className="admin-section-kicker">PAYMENTS</div><h2><FilePlus2 size={20} /> Create final invoice</h2><p>Prepare the remaining balance for a completed project.</p></div></div>
 					<div className="grid gap-4 sm:grid-cols-2">
 						<label className="text-sm font-semibold">Project reference<input className={field} value={f.projectRef} onChange={set('projectRef')} aria-invalid={!!errors.projectRef} placeholder="DEMO-1042" /><E k="projectRef" /></label>
@@ -210,9 +229,9 @@ function Admin() {
 					<button disabled={busy === 'create'} className="admin-submit inline-flex min-h-12 items-center gap-2 rounded-full bg-navy px-8 font-semibold text-white disabled:opacity-60">
 						{busy === 'create' && <Loader2 className="size-4 animate-spin" aria-hidden />} Create draft invoice
 					</button>
-				</form>
+				</form>}
 
-				<section id="invoices" className="admin-invoice-column" aria-labelledby="inv-h">
+				{activeTab === 'invoices' && <section aria-labelledby="inv-h" className="admin-invoice-column">
 					<div className="admin-section-head"><div><div className="admin-section-kicker">RECEIVABLES</div><h2 id="inv-h"><ReceiptText size={20} /> Invoices</h2><p>Recent payment requests and their status.</p></div><span className="admin-count">{data.invoices.length} total</span></div>
 					<div className="mt-4 space-y-4">
 						{created && !data.invoices.some((i) => i.id === created.id) && <InvoiceCard inv={created} onIssue={issue} busy={busy === created.id} />}
@@ -220,8 +239,8 @@ function Admin() {
 						{data.invoices.length === 0 && !data.listError && !created && <p className="text-sm text-muted">No invoices yet.</p>}
 						{data.invoices.map((i) => <InvoiceCard key={i.id} inv={i} onIssue={issue} busy={busy === i.id} />)}
 					</div>
-				</section>
-			</div>
+				</section>}
+			</div>}
 			</div>
 		</main>
 	)

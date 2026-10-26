@@ -10,13 +10,17 @@ import {
 	validateInvoice,
 } from '#/lib/validation'
 
+const INVOICE_API_VERSION = '2026-10-24'
+
 /* The app's company API key is attached to these requests at the network edge,
    so no secret exists in this source or the browser bundle. */
-async function whopFetch(path: string, init: RequestInit & { idempotencyKey?: string } = {}) {
+async function whopFetch(path: string, init: RequestInit & { idempotencyKey?: string; apiVersionDate?: string } = {}) {
+	const { idempotencyKey, apiVersionDate, ...requestInit } = init
 	const headers: Record<string, string> = { 'content-type': 'application/json' }
-	if (init.idempotencyKey) headers['Idempotency-Key'] = init.idempotencyKey
+	if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
+	if (apiVersionDate) headers['Api-Version-Date'] = apiVersionDate
 	const res = await fetch(`${process.env.WHOP_API_ORIGIN ?? 'https://api.whop.com'}/api/v1${path}`, {
-		...init,
+		...requestInit,
 		headers: { ...headers, ...(init.headers as Record<string, string> | undefined) },
 	})
 	const text = await res.text()
@@ -134,7 +138,7 @@ function toView(inv: any): InvoiceView {
 
 export const adminListInvoices = createServerFn({ method: 'GET' }).handler(async () => {
 	await guard()
-	const res = await whopFetch(`/invoices?account_id=${site.whopAccountId}&first=25`)
+	const res = await whopFetch(`/invoices?account_id=${site.whopAccountId}&first=25`, { apiVersionDate: INVOICE_API_VERSION })
 	if (!res.ok) throw new Error(apiMessage(res.body))
 	return ((res.body?.data ?? []) as any[]).map(toView)
 })
@@ -161,7 +165,7 @@ export const adminCreateInvoice = createServerFn({ method: 'POST' })
 		}
 
 		// Duplicate protection: one final invoice per project reference.
-		const existing = await whopFetch(`/invoices?account_id=${site.whopAccountId}&first=100`)
+		const existing = await whopFetch(`/invoices?account_id=${site.whopAccountId}&first=100`, { apiVersionDate: INVOICE_API_VERSION })
 		if (existing.ok) {
 			const dup = ((existing.body?.data ?? []) as any[]).find(
 				(i) => i?.metadata?.project_ref === ref && !['void'].includes(String(i?.status)),
@@ -206,7 +210,7 @@ export const adminCreateInvoice = createServerFn({ method: 'POST' })
 		} else if (data.memberId.trim()) body.member_id = data.memberId.trim()
 		else body.email_address = data.customerEmail.trim().toLowerCase()
 
-		const res = await whopFetch('/invoices', { method: 'POST', body: JSON.stringify(body), idempotencyKey: `final-invoice-${ref}` })
+		const res = await whopFetch('/invoices', { method: 'POST', body: JSON.stringify(body), idempotencyKey: `final-invoice-${ref}`, apiVersionDate: INVOICE_API_VERSION })
 		if (!res.ok) {
 			console.error('[invoice] create failed', res.status)
 			return { ok: false, message: apiMessage(res.body) }
@@ -220,9 +224,9 @@ export const adminIssueInvoice = createServerFn({ method: 'POST' })
 	.handler(async ({ data }): Promise<InvoiceResult> => {
 		await guard()
 		if (!/^pay_[A-Za-z0-9]+$/.test(data.id)) return { ok: false, message: 'Invalid invoice ID.' }
-		const current = await whopFetch(`/invoices/${data.id}`)
+		const current = await whopFetch(`/invoices/${data.id}`, { apiVersionDate: INVOICE_API_VERSION })
 		if (current.ok && current.body?.status === 'paid') return { ok: false, message: 'This invoice is already paid.' }
-		const res = await whopFetch(`/invoices/${data.id}/issue`, { method: 'POST', body: '{}' })
+		const res = await whopFetch(`/invoices/${data.id}/issue`, { method: 'POST', body: '{}', apiVersionDate: INVOICE_API_VERSION })
 		if (!res.ok) return { ok: false, message: apiMessage(res.body) }
 		return { ok: true, invoice: toView(res.body) }
 	})
