@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
-import { ArrowDownRight, ClipboardList, LayoutDashboard, LogOut, Sparkles, UsersRound } from 'lucide-react'
+import { ArrowDownRight, ClipboardList, LayoutDashboard, LogOut, Sparkles, Trash2, UsersRound } from 'lucide-react'
 import { site } from '#/config/site'
-import { adminListLeads, adminSaveQuote, adminStatus, type LeadRow } from '#/lib/api'
+import { adminDeleteLead, adminListLeads, adminSaveQuote, adminStatus, type LeadRow } from '#/lib/api'
 import { Logo } from '#/components/Navigation'
 
 export const Route = createFileRoute('/admin')({
@@ -129,6 +129,7 @@ function LeadCard({ lead, onSaved, setMsg }: { lead: LeadRow; onSaved: () => voi
 	const [valid, setValid] = useState(q.validUntil)
 	const [terms, setTerms] = useState(q.terms || 'The $500 deposit is credited toward the total. The remaining balance is invoiced after the work is complete. Work outside this scope needs a separate written estimate.')
 	const [busy, setBusy] = useState(false)
+	const [deleting, setDeleting] = useState(false)
 	const [path, setPath] = useState(lead.quotePath)
 	const link = path ? `${typeof window === 'undefined' ? '' : window.location.origin}${path}` : ''
 
@@ -147,6 +148,22 @@ function LeadCard({ lead, onSaved, setMsg }: { lead: LeadRow; onSaved: () => voi
 			setMsg({ kind: 'err', text: e instanceof Error ? e.message : 'Request failed.' })
 		} finally {
 			setBusy(false)
+		}
+	}
+
+	async function removeLead() {
+		if (deleting || !window.confirm(`Remove ${lead.name} from this pipeline? The Whop lead and payment history will remain, and this quote link will stop working.`)) return
+		setDeleting(true)
+		try {
+			const r = await adminDeleteLead({ data: { leadId: lead.id } })
+			if (r.ok) {
+				setMsg({ kind: 'ok', text: `${lead.name} was removed from the pipeline. Its Whop record remains available for history.` })
+				onSaved()
+			} else setMsg({ kind: 'err', text: r.message })
+		} catch (e) {
+			setMsg({ kind: 'err', text: e instanceof Error ? e.message : 'Could not remove this lead.' })
+		} finally {
+			setDeleting(false)
 		}
 	}
 
@@ -178,6 +195,7 @@ function LeadCard({ lead, onSaved, setMsg }: { lead: LeadRow; onSaved: () => voi
 			<div className="mt-4 flex flex-wrap gap-3">
 				{!locked && <button type="button" onClick={() => setOpen((o) => !o)} className="min-h-11 rounded-full bg-navy px-5 text-sm font-semibold text-white">{q.status === 'none' ? 'Write quote' : 'Edit quote'}</button>}
 				{locked && <p className="self-center text-sm font-medium text-muted">{q.status === 'deposit_paid' ? 'Deposit confirmed. Review the transaction in Whop Payments.' : 'Quote accepted. Manage payments in Whop.'}</p>}
+				<button type="button" onClick={removeLead} disabled={deleting} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-red-200 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"><Trash2 size={15} aria-hidden />{deleting ? 'Removing…' : 'Delete'}</button>
 			</div>
 			{open && (
 				<div className="mt-4 space-y-3 border-t border-line pt-4">

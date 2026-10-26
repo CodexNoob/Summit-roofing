@@ -306,7 +306,7 @@ export const adminListLeads = createServerFn({ method: 'GET' }).handler(async ()
 	const res = await whopFetch(`/leads?account_id=${site.whopAccountId}&first=50`)
 	if (!res.ok) throw new Error(apiMessage(res.body))
 	return ((res.body?.data ?? []) as any[])
-		.filter((l) => l?.metadata?.source === 'estimate_form')
+		.filter((l) => l?.metadata?.source === 'estimate_form' && !l?.metadata?.pipeline_deleted_at)
 		.map((l) => {
 			const m = l.metadata ?? {}
 			return {
@@ -324,6 +324,23 @@ export const adminListLeads = createServerFn({ method: 'GET' }).handler(async ()
 		})
 })
 
+/** Hide a lead from this app's pipeline while retaining its Whop history. */
+export const adminDeleteLead = createServerFn({ method: 'POST' })
+	.validator((d: { leadId: string }) => d)
+	.handler(async ({ data }): Promise<{ ok: true } | { ok: false; message: string }> => {
+		await guard()
+		if (!LEAD_ID.test(data.leadId)) return { ok: false, message: 'Invalid lead ID.' }
+		const lead = await getLead(data.leadId)
+		if (!lead || lead.metadata?.source !== 'estimate_form') return { ok: false, message: 'Lead not found.' }
+		const res = await patchLead(lead.id, {
+			...lead.metadata,
+			quote_token: '',
+			pipeline_deleted_at: new Date().toISOString(),
+		})
+		if (!res.ok) return { ok: false, message: apiMessage(res.body) }
+		return { ok: true }
+	})
+
 export type QuoteInput = { leadId: string; scope: string; total: number; terms: string; validUntil: string }
 
 export const adminSaveQuote = createServerFn({ method: 'POST' })
@@ -339,7 +356,7 @@ export const adminSaveQuote = createServerFn({ method: 'POST' })
 		if (terms.length > 450) return { ok: false, message: 'Keep the terms under 450 characters.' }
 		if (!data.validUntil || new Date(`${data.validUntil}T23:59:59`) < new Date()) return { ok: false, message: 'Choose a valid-until date in the future.' }
 		const lead = await getLead(data.leadId)
-		if (!lead) return { ok: false, message: 'Lead not found.' }
+		if (!lead || lead.metadata?.source !== 'estimate_form' || lead.metadata?.pipeline_deleted_at) return { ok: false, message: 'Lead not found.' }
 		const m = lead.metadata ?? {}
 		if (m.quote_status === 'accepted' || m.quote_status === 'deposit_paid')
 			return { ok: false, message: 'This quote was already accepted and can no longer be edited.' }
