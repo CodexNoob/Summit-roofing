@@ -5,6 +5,7 @@ import { site } from '#/config/site'
 import { adminCreateInvoice, adminIssueInvoice, adminListInvoices, adminListLeads, adminSaveQuote, adminStatus, type InvoiceView, type LeadRow } from '#/lib/api'
 import { computeBalance, validateInvoice, type InvoiceErrors, type InvoiceInput } from '#/lib/validation'
 import { InvoiceCard } from '#/components/InvoiceCard'
+import { Logo } from '#/components/Navigation'
 
 export const Route = createFileRoute('/admin')({
 	head: () => ({ meta: [{ title: `Operator console | ${site.name}` }, { name: 'robots', content: 'noindex' }] }),
@@ -140,7 +141,7 @@ function Admin() {
 	return (
 		<main className="admin-shell min-h-screen">
 			<header className="admin-topbar">
-				<Link to="/" className="admin-brand" aria-label={`${site.name} home`}><span className="admin-brand-mark">S</span><span>{site.name}<small>BUSINESS PORTAL</small></span></Link>
+				<Logo light={false} href="/" className="admin-site-logo" />
 				<div className="admin-topbar-right"><span className="admin-avatar">{data.name.slice(0, 1).toUpperCase()}</span><span className="hidden sm:block">{data.name}</span><a href="/api/oauth/logout" className="admin-logout"><LogOut size={16} aria-hidden /> Sign out</a></div>
 			</header>
 			<div className="admin-content">

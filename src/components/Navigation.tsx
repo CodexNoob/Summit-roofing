@@ -3,9 +3,9 @@ import { Menu, Phone, X } from 'lucide-react'
 import { site } from '#/config/site'
 import { container } from '#/components/ui'
 
-export function Logo({ light = true }: { light?: boolean }) {
+export function Logo({ light = true, href = '#top', className = '' }: { light?: boolean; href?: string; className?: string }) {
 	return (
-		<a href="#top" className="flex items-center gap-3" aria-label={`${site.name} home`}>
+		<a href={href} className={`flex items-center gap-3 ${className}`} aria-label={`${site.name} home`}>
 			<span className="grid size-10 place-items-center rounded-[10px] bg-accent font-display text-xl font-extrabold text-navy">
 				<svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 					<path d="M3 13 12 4l9 9" />

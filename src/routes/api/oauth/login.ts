@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { setCookie } from '@tanstack/react-start/server'
-import { site } from '#/config/site'
+import { oauthRedirectUri } from '#/lib/oauth'
 
 const SCOPES = 'openid profile email'
 
@@ -25,6 +25,8 @@ export const Route = createFileRoute('/api/oauth/login')({
 				console.error('[oauth] APP_ID is not configured')
 				return Response.json({ error: 'OAuth is not configured on this deployment.' }, { status: 500 })
 			}
+			const redirectUri = oauthRedirectUri(url, clientId)
+			if (!redirectUri) return Response.json({ error: 'OAuth is unavailable on this domain.' }, { status: 400 })
 				const verifier = randomString()
 				const state = randomString()
 				const nonce = randomString()
@@ -39,7 +41,7 @@ export const Route = createFileRoute('/api/oauth/login')({
 				const params = new URLSearchParams({
 					response_type: 'code',
 					client_id: clientId,
-					redirect_uri: new URL('/api/oauth/callback', site.url).toString(),
+					redirect_uri: redirectUri,
 					scope: SCOPES,
 					state,
 					nonce,

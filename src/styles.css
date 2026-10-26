@@ -147,9 +147,7 @@ html.reveal-ready .timeline-line-v:not(.is-in) {
 /* Admin workspace */
 .admin-shell { background: #f5f7fa; color: #142033; }
 .admin-topbar { height: 70px; display:flex; align-items:center; justify-content:space-between; padding:0 clamp(20px,5vw,72px); background:#fff; border-bottom:1px solid #e8edf3; }
-.admin-brand { display:flex; align-items:center; gap:11px; color:#142033; font-family:var(--font-display); font-size:14px; font-weight:800; text-decoration:none; letter-spacing:-.02em; }
-.admin-brand small { display:block; margin-top:2px; color:#8792a1; font:700 9px var(--font-sans); letter-spacing:.13em; }
-.admin-brand-mark { display:grid; place-items:center; width:34px; height:34px; border-radius:11px; background:#142033; color:#fff; font-size:18px; }
+.admin-site-logo { text-decoration:none; }
 .admin-topbar-right { display:flex; align-items:center; gap:10px; color:#526176; font-size:13px; font-weight:600; }
 .admin-avatar { display:grid; place-items:center; width:32px;height:32px;border-radius:50%;background:#ffeadc;color:#bd4d0a;font-weight:800; }
 .admin-logout { display:inline-flex; align-items:center; gap:7px; margin-left:14px; padding-left:18px; border-left:1px solid #e8edf3; color:#526176; text-decoration:none; }

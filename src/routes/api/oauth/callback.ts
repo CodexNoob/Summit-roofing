@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { getCookie, setCookie } from '@tanstack/react-start/server'
-import { site } from '#/config/site'
+import { oauthRedirectUri } from '#/lib/oauth'
 import { writeSession } from '#/lib/session'
 
 export const Route = createFileRoute('/api/oauth/callback')({
@@ -8,6 +8,9 @@ export const Route = createFileRoute('/api/oauth/callback')({
 		handlers: {
 			GET: async ({ request }) => {
 				const url = new URL(request.url)
+				const clientId = process.env.APP_ID
+				const redirectUri = clientId ? oauthRedirectUri(url, clientId) : null
+				if (!redirectUri) return Response.json({ error: 'OAuth is unavailable on this domain.' }, { status: 400 })
 				const code = url.searchParams.get('code')
 				const state = url.searchParams.get('state')
 				const verifier = getCookie('oauth_verifier')
@@ -27,10 +30,10 @@ export const Route = createFileRoute('/api/oauth/callback')({
 					headers: { 'content-type': 'application/x-www-form-urlencoded' },
 					body: new URLSearchParams({
 						grant_type: 'authorization_code',
-						client_id: process.env.APP_ID!,
+						client_id: clientId!,
 						code,
 						code_verifier: verifier,
-						redirect_uri: new URL('/api/oauth/callback', site.url).toString(),
+						redirect_uri: redirectUri,
 					}),
 				})
 				if (!response.ok) {
